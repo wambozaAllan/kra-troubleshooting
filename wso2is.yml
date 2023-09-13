@@ -20,11 +20,11 @@ services:
       timeout: 3s
       retries: 80
     volumes:
-      - /common/wso2stack/wso2/wso2is/logs:/home/wso2usr/wso2is-5.11.0/repository/logs
-      - /common/wso2stack/wso2/wso2is/server:/home/wso2usr/server
-      - /common/wso2stack/wso2/keystores/wso2carbon.jks:/home/wso2usr/config/repository/resources/security/wso2carbon.jks
-      - /common/wso2stack/wso2/keystores/client-truststore.jks:/home/wso2usr/config/repository/resources/security/client-truststore.jks
-      - /common/wso2stack/wso2/libs/postgresql-42.2.24.jar:/home/wso2usr/config/repository/components/lib/postgresql-42.2.24.jar
+      - /common/wso2stack2/wso2/wso2is/logs:/home/wso2usr/wso2is-5.11.0/repository/logs
+      - /common/wso2stack2/wso2/wso2is/server:/home/wso2usr/server
+      - /common/wso2stack2/wso2/keystores/wso2carbon.jks:/home/wso2usr/config/repository/resources/security/wso2carbon.jks
+      - /common/wso2stack2/wso2/keystores/client-truststore.jks:/home/wso2usr/config/repository/resources/security/client-truststore.jks
+      - /common/wso2stack2/wso2/libs/postgresql-42.2.24.jar:/home/wso2usr/config/repository/components/lib/postgresql-42.2.24.jar
     deploy:
       mode: replicated
       replicas: 2
@@ -69,10 +69,10 @@ services:
       - swarm-net
     entrypoint: dockerize -timeout 600s -wait tcp://10.150.5.73:5432 /home/wso2usr/entrypoint.sh
     volumes:
-      - /common/wso2stack/wso2/wso2is-analytics/logs/worker:/home/wso2usr/wso2is-analytics-5.8.0/wso2/worker/logs
-      - /common/wso2stack/wso2/keystores/wso2carbon.jks:/home/wso2usr/config/resources/security/wso2carbon.jks
-      - /common/wso2stack/wso2/keystores/client-truststore.jks:/home/wso2usr/config/resources/security/client-truststore.jks
-      - /common/wso2stack/wso2/libs/postgresql_42.2.24_1.0.0.jar:/home/wso2usr/wso2is-analytics-5.8.0/lib/postgresql_42.2.24_1.0.0.jar
+      - /common/wso2stack2/wso2/wso2is-analytics/logs/worker:/home/wso2usr/wso2is-analytics-5.8.0/wso2/worker/logs
+      - /common/wso2stack2/wso2/keystores/wso2carbon.jks:/home/wso2usr/config/resources/security/wso2carbon.jks
+      - /common/wso2stack2/wso2/keystores/client-truststore.jks:/home/wso2usr/config/resources/security/client-truststore.jks
+      - /common/wso2stack2/wso2/libs/postgresql_42.2.24_1.0.0.jar:/home/wso2usr/wso2is-analytics-5.8.0/lib/postgresql_42.2.24_1.0.0.jar
     environment:
       CARBON_SCRIPT: worker.sh
     deploy:
@@ -109,10 +109,10 @@ services:
       - swarm-net
     #entrypoint: dockerize -timeout 600s -wait tcp://10.150.5.73:5432 /home/wso2usr/entrypoint.sh
     volumes:
-      - /common/wso2stack/wso2/wso2is-analytics/logs/dashboard:/home/wso2usr/wso2is-analytics-5.8.0/wso2/dashboard/logs
-      - /common/wso2stack/wso2/keystores/wso2carbon.jks:/home/wso2usr/config/resources/security/wso2carbon.jks
-      - /common/wso2stack/wso2/keystores/client-truststore.jks:/home/wso2usr/config/resources/security/client-truststore.jks
-      - /common/wso2stack/wso2/libs/postgresql_42.2.24_1.0.0.jar:/home/wso2usr/wso2is-analytics-5.8.0/lib/postgresql_42.2.24_1.0.0.jar
+      - /common/wso2stack2/wso2/wso2is-analytics/logs/dashboard:/home/wso2usr/wso2is-analytics-5.8.0/wso2/dashboard/logs
+      - /common/wso2stack2/wso2/keystores/wso2carbon.jks:/home/wso2usr/config/resources/security/wso2carbon.jks
+      - /common/wso2stack2/wso2/keystores/client-truststore.jks:/home/wso2usr/config/resources/security/client-truststore.jks
+      - /common/wso2stack2/wso2/libs/postgresql_42.2.24_1.0.0.jar:/home/wso2usr/wso2is-analytics-5.8.0/lib/postgresql_42.2.24_1.0.0.jar
     environment:
       CARBON_SCRIPT: dashboard.sh
     deploy:
