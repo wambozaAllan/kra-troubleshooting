@@ -1,0 +1,154 @@
+version: '3.3'
+services:
+  identity-server:
+    image: iam-nexus-cicd.kra.go.ke/wso2is:5.11.0.0
+    logging:
+      driver: json-file
+      options:
+        max-file: '5'
+        max-size: 5m
+    networks:
+      - swarm-net
+    environment:
+      JVM_MEM_OPTS: -Xms2G -Xmx8G
+      CARBON_SCRIPT: wso2server.sh
+      DRIVER_DBM_POSTGRESQL: "true"
+    entrypoint: dockerize -timeout 600s -wait tcp://10.150.5.73:5432 /home/wso2usr/entrypoint.sh
+    healthcheck:
+      test: ["CMD", "nc", "-z","localhost", "9443"]
+      interval: 10s
+      timeout: 3s
+      retries: 80
+    volumes:
+      - /common/wso2stack/wso2/wso2is/logs:/home/wso2usr/wso2is-5.11.0/repository/logs
+      - /common/wso2stack/wso2/wso2is/server:/home/wso2usr/server
+      - /common/wso2stack/wso2/keystores/wso2carbon.jks:/home/wso2usr/config/repository/resources/security/wso2carbon.jks
+      - /common/wso2stack/wso2/keystores/client-truststore.jks:/home/wso2usr/config/repository/resources/security/client-truststore.jks
+      - /common/wso2stack/wso2/libs/postgresql-42.2.24.jar:/home/wso2usr/config/repository/components/lib/postgresql-42.2.24.jar
+    deploy:
+      mode: replicated
+      replicas: 2
+      endpoint_mode: dnsrr
+      resources:  
+        limits:
+          cpus: '2'
+          memory: 4G
+      placement:
+        constraints: [node.role == manager]
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.kra-is-wso2is.rule=Host(`identity.kra.go.ke`)"
+        - "traefik.http.routers.kra-is-wso2is.entrypoints=https"
+        - "traefik.http.routers.kra-is-wso2is.tls=true"
+        - "traefik.http.services.kra-is-wso2is.loadbalancer.server.port=9443"
+        - "traefik.http.services.kra-is-wso2is.loadbalancer.server.scheme=https"
+        - "traefik.http.services.kra-is-wso2is.loadBalancer.sticky.cookie=true"
+        - "traefik.http.services.kra-is-wso2is.loadBalancer.sticky.cookie.name=wso2is"
+    configs:
+      - source: kra-is-deployment-toml-encrypt-12-09-2023_1
+        target: /home/wso2usr/config/repository/conf/deployment.toml
+      - source: kra-is-eventpublisher-AD
+        target: /home/wso2usr/config-server/eventpublishers/IsAnalytics-Publisher-wso2event-AuthenticationData-1.1.0.xml
+      - source: kra-is-eventpublisher-SD
+        target: /home/wso2usr/config-server/eventpublishers/IsAnalytics-Publisher-wso2event-SessionData.xml
+      - source: kra-is-log4j2-properties
+        target: /home/wso2usr/config/repository/conf/log4j2.properties
+  is-analytics-worker:
+    image: iam-nexus-cicd.kra.go.ke/wso2is-analytics-worker:5.8.0.0
+    logging:
+      driver: json-file
+      options:
+        max-file: '5'
+        max-size: 5m
+    healthcheck:
+      test: ["CMD", "nc", "-z","localhost", "9091"]
+      interval: 10s
+      timeout: 120s
+      retries: 5
+    networks:
+      - swarm-net
+    entrypoint: dockerize -timeout 600s -wait tcp://10.150.5.73:5432 /home/wso2usr/entrypoint.sh
+    volumes:
+      - /common/wso2stack/wso2/wso2is-analytics/logs/worker:/home/wso2usr/wso2is-analytics-5.8.0/wso2/worker/logs
+      - /common/wso2stack/wso2/keystores/wso2carbon.jks:/home/wso2usr/config/resources/security/wso2carbon.jks
+      - /common/wso2stack/wso2/keystores/client-truststore.jks:/home/wso2usr/config/resources/security/client-truststore.jks
+      - /common/wso2stack/wso2/libs/postgresql_42.2.24_1.0.0.jar:/home/wso2usr/wso2is-analytics-5.8.0/lib/postgresql_42.2.24_1.0.0.jar
+    environment:
+      CARBON_SCRIPT: worker.sh
+    deploy:
+      mode: replicated
+      replicas: 1
+      endpoint_mode: dnsrr
+      resources:  
+        limits:
+          cpus: '2'
+          memory: 4G
+      placement:
+        constraints: [node.role == manager]
+    configs:
+      - source: kra-is-analytics-deployment-worker-01-12-2022
+        target: /home/wso2usr/config/conf/worker/deployment.yaml
+      - source: kra-is-authn-common-siddhi
+        target: /home/wso2usr/wso2is-analytics-5.8.0/wso2/worker/deployment/siddhi-files/IS_ANALYTICS_AUTHENTICATION_COMMON.siddhi
+  is-analytics-dashboard:
+    image: iam-nexus-cicd.kra.go.ke/wso2is-analytics-dashboard:5.8.0.0
+    logging:
+      driver: json-file
+      options:
+        max-file: '5'
+        max-size: 5m
+    healthcheck:
+      test: ["CMD", "nc", "-z","localhost", "9643"]
+      interval: 10s
+      timeout: 120s
+      retries: 5
+    configs:
+      - source: kra-is-analytics-deployment-dashboard-01-12-2022
+        target: /home/wso2usr/config/conf/dashboard/deployment.yaml
+    networks:
+      - swarm-net
+    #entrypoint: dockerize -timeout 600s -wait tcp://10.150.5.73:5432 /home/wso2usr/entrypoint.sh
+    volumes:
+      - /common/wso2stack/wso2/wso2is-analytics/logs/dashboard:/home/wso2usr/wso2is-analytics-5.8.0/wso2/dashboard/logs
+      - /common/wso2stack/wso2/keystores/wso2carbon.jks:/home/wso2usr/config/resources/security/wso2carbon.jks
+      - /common/wso2stack/wso2/keystores/client-truststore.jks:/home/wso2usr/config/resources/security/client-truststore.jks
+      - /common/wso2stack/wso2/libs/postgresql_42.2.24_1.0.0.jar:/home/wso2usr/wso2is-analytics-5.8.0/lib/postgresql_42.2.24_1.0.0.jar
+    environment:
+      CARBON_SCRIPT: dashboard.sh
+    deploy:
+      mode: replicated
+      replicas: 1
+      endpoint_mode: dnsrr
+      resources:  
+        limits:
+          cpus: '2'
+          memory: 4G
+      placement:
+        constraints: [node.role == manager]
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.wso2is-an.rule=Host(`analytics-identity.iam.kra.go.ke`)"
+        - "traefik.http.routers.wso2is-an.entrypoints=https,http"
+        - "traefik.http.routers.wso2is-an.tls=true"
+        - "traefik.http.services.wso2is-an.loadbalancer.server.port=9643"
+        - "traefik.http.services.wso2is-an.loadbalancer.server.scheme=https"
+configs:
+#IS
+  kra-is-deployment-toml-encrypt-12-09-2023_1:
+    external: true
+  kra-is-log4j2-properties:
+    external: true
+  kra-is-eventpublisher-AD:
+    external: true
+  kra-is-eventpublisher-SD:
+    external: true
+  kra-is-analytics-deployment-worker-01-12-2022:
+    external: true
+  kra-is-analytics-deployment-dashboard-01-12-2022:
+    external: true
+  kra-is-authn-common-siddhi:
+    external: true
+networks:
+  swarm-net:
+    external: true
+
